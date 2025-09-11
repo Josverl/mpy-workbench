@@ -33,7 +33,7 @@ class Esp32Tree {
             // Usar el estilo de welcome view para el botón
             item.tooltip = "Click to select a serial port";
             item.label = "$(plug) Select Serial Port";
-            // Aplicar la clase CSS personalizada
+            // Apply custom CSS class
             item.className = 'esp32fs-no-port-item';
             return item;
         }
@@ -58,9 +58,9 @@ class Esp32Tree {
         this._nodeCache.clear();
     }
     /**
-     * Agrega un nodo (archivo o carpeta) al árbol en memoria y refresca solo el padre.
-     * @param path Ruta absoluta en el board (ej: /foo/bar.txt)
-     * @param isDir true si es carpeta, false si es archivo
+     * Adds a node (file or folder) to the in-memory tree and refreshes only the parent.
+     * @param path Absolute path on board (e.g.: /foo/bar.txt)
+     * @param isDir true if folder, false if file
      */
     addNode(path, isDir) {
         const parentPath = path.includes("/") ? path.replace(/\/[^\/]+$/, "") || "/" : "/";
@@ -77,10 +77,10 @@ class Esp32Tree {
             // Ordena: carpetas primero, luego archivos, ambos alfabéticamente
             siblings.sort((a, b) => (a.kind === b.kind) ? a.name.localeCompare(b.name) : (a.kind === "dir" ? -1 : 1));
         }
-        // Refresca árbol (VS Code volverá a pedir getChildren; usaremos cache)
+        // Refresh tree (VS Code will ask for getChildren again; we'll use cache)
         this._onDidChangeTreeData.fire(undefined);
     }
-    /** Elimina un nodo del árbol en memoria y refresca la vista. */
+    /** Removes a node from the in-memory tree and refreshes the view. */
     removeNode(path) {
         const parentPath = path.includes("/") ? path.replace(/\/[^\/]+$/, "") || "/" : "/";
         const name = path.split("/").pop();
@@ -189,7 +189,7 @@ class Esp32Tree {
                 console.log("Could not add local-only files to tree:", err);
             }
             nodes.sort((a, b) => (a.kind === b.kind) ? a.name.localeCompare(b.name) : (a.kind === "dir" ? -1 : 1));
-            // Cachear este directorio para actualizaciones incrementales
+            // Cache this directory for incremental updates
             this._nodeCache.set(path, nodes);
             return nodes;
         }

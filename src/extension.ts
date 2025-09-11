@@ -95,12 +95,12 @@ export function activate(context: vscode.ExtensionContext) {
         const out = String(stdout || '').trim();
         if (out === 'ok') return;
         vscode.window.showWarningMessage(
-          `Dependencia faltante: pyserial. Instala pyserial en el entorno Python (${pythonPath}) usado por la extensión para detectar puertos y comunicar con el dispositivo.`
+          `Missing dependency: pyserial. Install pyserial in the Python environment (${pythonPath}) used by the extension to detect ports and communicate with the device.`
         );
       });
     } catch (error) {
       console.warn('Failed to check Python dependencies:', error);
-      vscode.window.showWarningMessage('Error al verificar dependencias Python. Asegúrate de que Python y pyserial estén instalados.');
+      vscode.window.showWarningMessage('Error checking Python dependencies. Make sure Python and pyserial are installed.');
     }
   };
   
@@ -385,7 +385,7 @@ export function activate(context: vscode.ExtensionContext) {
       tree.refreshTree();
     }),
     vscode.commands.registerCommand("mpyWorkbench.pickPort", async () => {
-      // Siempre obtener la lista más reciente de puertos antes de mostrar el selector
+      // Always get the latest list of ports before showing the selector
       const ports = await mp.listSerialPorts();
       const items: vscode.QuickPickItem[] = [
         { label: "auto", description: "Auto-detect device" },
@@ -576,7 +576,7 @@ export function activate(context: vscode.ExtensionContext) {
         await withAutoSuspend(() => mp.cpFromDevice(node.path, abs));
       }
       await withAutoSuspend(() => mp.cpToDevice(abs, node.path));
-      tree.addNode(node.path, false); // Añade archivo subido al árbol
+      tree.addNode(node.path, false); // Add uploaded file to tree
       vscode.window.showInformationMessage(`Synced local → board: ${rel}`);
     }),
     vscode.commands.registerCommand("mpyWorkbench.syncFileBoardToLocal", async (node: Esp32Node) => {
@@ -588,7 +588,7 @@ export function activate(context: vscode.ExtensionContext) {
       const abs = path.join(ws.uri.fsPath, ...rel.split("/"));
       await fs.mkdir(path.dirname(abs), { recursive: true });
       await withAutoSuspend(() => mp.cpFromDevice(node.path, abs));
-      tree.addNode(node.path, false); // Garantiza presencia en árbol (no relista)
+      tree.addNode(node.path, false); // Ensure presence in tree (no relist)
       vscode.window.showInformationMessage(`Synced board → local: ${rel}`);
       try {
         const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(abs));
@@ -606,7 +606,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("mpyWorkbench.syncBaseline", async () => {
       try {
-        // Cierra la terminal REPL si está abierta para evitar conflicto de puerto
+        // Close REPL terminal if open to avoid port conflict
         if (isReplOpen()) {
           await disconnectReplTerminal();
           await new Promise(r => setTimeout(r, 400));
@@ -667,13 +667,13 @@ export function activate(context: vscode.ExtensionContext) {
               if (deviceDir !== '.' && deviceDir !== rootPath) {
                 try {
                   await mp.mkdir(deviceDir);
-                  tree.addNode(deviceDir, true); // Añade carpeta al árbol
+                  tree.addNode(deviceDir, true); // Add folder to tree
                 } catch {
                   // Directory might already exist, ignore error
                 }
               }
               await mp.uploadReplacing(localPath, devicePath);
-              tree.addNode(devicePath, false); // Añade archivo al árbol
+              tree.addNode(devicePath, false); // Add file to tree
             }
           });
         });
@@ -697,7 +697,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("mpyWorkbench.syncBaselineFromBoard", async () => {
-      // Cierra la terminal REPL si está abierta para evitar conflicto de puerto
+      // Close REPL terminal if open to avoid port conflict
       if (isReplOpen()) {
         await disconnectReplTerminal();
         await new Promise(r => setTimeout(r, 400));
@@ -723,7 +723,7 @@ export function activate(context: vscode.ExtensionContext) {
             progress.report({ message: `Downloading ${rel} (${++done}/${total})` });
             await fs.mkdir(path.dirname(abs), { recursive: true });
             await mp.cpFromDevice(stat.path, abs);
-            tree.addNode(stat.path, false); // Añade archivo descargado al árbol
+            tree.addNode(stat.path, false); // Add downloaded file to tree
           }
         });
       });
@@ -788,31 +788,31 @@ export function activate(context: vscode.ExtensionContext) {
       const ed = vscode.window.activeTextEditor;
       if (!ed) { vscode.window.showErrorMessage("No active editor"); return; }
       await ed.document.save();
-      // Si la terminal REPL está abierta, ciérrala antes de ejecutar
+      // If REPL terminal is open, close it before executing
       if (isReplOpen()) {
         await closeReplTerminal();
-        // Espera a que el sistema libere el puerto
+        // Wait for the system to release the port
         await new Promise(r => setTimeout(r, 400));
       }
       // Intenta abrir la terminal REPL
       try {
         await openReplTerminal(context);
       } catch (err) {
-        vscode.window.showErrorMessage("No se pudo abrir la terminal REPL. El puerto puede estar ocupado o desconectado. Cierra cualquier proceso que use el puerto e inténtalo de nuevo.");
+        vscode.window.showErrorMessage("Could not open REPL terminal. The port may be busy or disconnected. Close any process using the port and try again.");
         return;
       }
       const term = await getReplTerminal(context);
-      // Pausa mayor para evitar que Ctrl-* se trate como señal del host antes de que miniterm tome control
+      // Longer pause to prevent Ctrl-* from being treated as host signal before miniterm takes control
       await new Promise(r => setTimeout(r, 600));
-      // Entrar en RAW REPL (no eco de entrada). Evitar Ctrl-C aquí porque puede generar KeyboardInterrupt en miniterm si aún no está listo
+      // Enter RAW REPL (no input echo). Avoid Ctrl-C here as it may generate KeyboardInterrupt in miniterm if not ready yet
       term.sendText("\x01", false); // Ctrl-A (raw REPL)
       await new Promise(r => setTimeout(r, 150));
       // Send the complete file content; in RAW REPL the text is not shown
       const text = ed.document.getText().replace(/\r\n/g, "\n");
       term.sendText(text, true);
       // Finalizar y ejecutar
-      term.sendText("\x04", false); // Ctrl-D (ejecutar en raw)
-      // Volver al REPL amigable tras un pequeño intervalo
+      term.sendText("\x04", false); // Ctrl-D (execute in raw)
+      // Return to friendly REPL after a short interval
       await new Promise(r => setTimeout(r, 200));
       term.sendText("\x02", false); // Ctrl-B (friendly REPL)
     }),
@@ -825,7 +825,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (normRoot === "/") return "/" + localRel;
           return localRel === "" ? normRoot : normRoot + "/" + localRel;
         };
-      // Cierra la terminal REPL si está abierta para evitar conflicto de puerto
+      // Close REPL terminal if open to avoid port conflict
       if (isReplOpen()) {
         await disconnectReplTerminal();
         await new Promise(r => setTimeout(r, 400));
@@ -864,7 +864,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (devicePath === normRoot) return "";
           return devicePath.replace(/^\//, "");
         };
-        // Aplica ignore/filtros en local antes de comparar
+        // Apply ignore/filters locally before comparing
         const matcher = await createIgnoreMatcher(ws.uri.fsPath);
         const localManifest = await buildManifest(ws.uri.fsPath, matcher);
         // Solo archivos locales no ignorados
@@ -881,7 +881,7 @@ export function activate(context: vscode.ExtensionContext) {
         const diffSet = new Set<string>();
 
         progress.report({ message: "Comparing files..." });
-        // Compara solo archivos locales no ignorados
+        // Compare only non-ignored local files
         for (const localRel of localFiles) {
           const deviceFile = deviceFileMap.get(localRel);
           const abs = path.join(ws.uri.fsPath, ...localRel.split('/'));
@@ -897,7 +897,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
 
-        // Archivos en el board que no existen localmente (no ignorados)
+        // Files on board that don't exist locally (non-ignored)
         for (const [rel, deviceFile] of deviceFileMap.entries()) {
           if (!localFiles.includes(rel)) {
             diffSet.add(deviceFile.path);
@@ -905,7 +905,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         progress.report({ message: "Checking local files..." });
-        // Archivos que existen localmente pero no en el board
+        // Files that exist locally but not on board
         const localOnlySet = new Set<string>();
         for (const localRel of localFiles) {
           const deviceFile = deviceFileMap.get(localRel);
@@ -1057,7 +1057,7 @@ export function activate(context: vscode.ExtensionContext) {
             progress.report({ message: `${action} ${rel} (${++done}/${total})` });
             
             await mp.uploadReplacing(abs, devicePath);
-            tree.addNode(devicePath, false); // Añade archivo subido al árbol
+            tree.addNode(devicePath, false); // Add uploaded file to tree
           }
         });
       });
@@ -1137,7 +1137,7 @@ export function activate(context: vscode.ExtensionContext) {
             progress.report({ message: `Downloading ${rel} (${++done}/${total})` });
             await fs.mkdir(path.dirname(abs), { recursive: true });
             await mp.cpFromDevice(devicePath, abs);
-            tree.addNode(devicePath, false); // Añade archivo descargado al árbol
+            tree.addNode(devicePath, false); // Add downloaded file to tree
           }
         });
       });
@@ -1180,7 +1180,7 @@ export function activate(context: vscode.ExtensionContext) {
       const okBoard = await vscode.window.showWarningMessage(`Delete ${node.path} from board?`, { modal: true }, "Delete");
       if (okBoard !== "Delete") return;
       
-      // Mostrar progreso con animación
+      // Show progress with animation
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Deleting ${node.path}...`,
@@ -1206,7 +1206,7 @@ export function activate(context: vscode.ExtensionContext) {
       const okBoardLocal = await vscode.window.showWarningMessage(`Delete ${node.path} from board AND local workspace?`, { modal: true }, "Delete");
       if (okBoardLocal !== "Delete") return;
       
-      // Mostrar progreso con animación
+      // Show progress with animation
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Deleting ${node.path} from board and local...`,
@@ -1248,7 +1248,7 @@ export function activate(context: vscode.ExtensionContext) {
       );
       if (warn !== "Delete All") return;
       
-      // Mostrar progreso con animación detallada
+      // Show detailed progress with animation
       await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Deleting all files from ${rootPath}...`,
@@ -1269,17 +1269,17 @@ export function activate(context: vscode.ExtensionContext) {
           
           progress.report({ increment: 20, message: `Found ${totalItems} items to delete...` });
           
-          // Usar nuestra nueva función para eliminar todo
+          // Use our new function to delete everything
           const result = await withAutoSuspend(() => mp.deleteAllInPath(rootPath));
           
           progress.report({ increment: 80, message: "Verifying deletion..." });
           
-          // Verificar lo que queda
+          // Verify what remains
           const remaining = await withAutoSuspend(() => mp.listTreeStats(rootPath));
           
           progress.report({ increment: 100, message: "Deletion complete!" });
           
-          // Reportar resultados
+          // Report results
           const deletedCount = (result as any).deleted_count ?? result.deleted.length;
           const errorCount = (result as any).error_count ?? result.errors.length;
           const remainingCount = remaining.length;
@@ -1304,7 +1304,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showErrorMessage(`Failed to delete files from board: ${error?.message ?? String(error)}`);
         }
       });
-      // Actualiza el árbol sin relistar: deja el directorio raíz vacío en cache
+      // Update tree without relisting: leave root directory empty in cache
       tree.resetDir(rootPath);
     }),
     vscode.commands.registerCommand("mpyWorkbench.deleteAllBoardFromView", async () => {
@@ -1434,7 +1434,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.setStatusBarMessage("Board: Auto sync desactivado — guardado solo en local (workspace)", 3000);
           lastLocalOnlyNotice = now;
         }
-        return; // solo guardar en local
+        return; // only save locally
       }
       const rootPath = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.rootPath", "/");
       const rel = path.relative(ws.uri.fsPath, doc.uri.fsPath).replace(/\\/g, "/");

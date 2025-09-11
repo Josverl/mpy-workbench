@@ -44,7 +44,7 @@ function normalizeConnect(c) {
 function toolPath() {
     const ext = vscode.extensions.getExtension("DanielBucam.mpy-workbench");
     if (!ext) {
-        vscode.window.showWarningMessage("No se encontró la extensión 'mpy-workbench'. Verifica el campo 'publisher' y 'name' en tu package.json.");
+        vscode.window.showWarningMessage("Extension 'mpy-workbench' not found. Verify the 'publisher' and 'name' fields in your package.json.");
         throw new Error("Extension not found for tool path");
     }
     return path.join(ext.extensionPath, "scripts", "pyserial_tool.py");
@@ -87,10 +87,10 @@ function maybeNotifySerialStatus(msg) {
         return;
     lastDisconnectNotice = now;
     if (busy) {
-        vscode.window.showWarningMessage("Puerto serie ocupado o sin permisos. Cierra otros monitores (Arduino, Thonny, miniterm) o revisa permisos.");
+        vscode.window.showWarningMessage("Serial port busy or permission denied. Close other monitors (Arduino, Thonny, miniterm) or check permissions.");
     }
     else {
-        vscode.window.showWarningMessage("ESP32 desconectado o puerto no disponible. Verifica cable/alimentación y vuelve a seleccionar el puerto.");
+        vscode.window.showWarningMessage("ESP32 disconnected or port unavailable. Check cable/power and reselect the port.");
     }
 }
 function runTool(args, opts = {}) {
@@ -155,7 +155,7 @@ async function listSerialPorts() {
         const { stdout } = await runTool(["devs"]);
         const ports = String(stdout || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         if (ports.length === 0) {
-            vscode.window.showWarningMessage("No serial ports detected. Verifica que Python y pyserial estén instalados en el entorno usado por la extensión.");
+            vscode.window.showWarningMessage("No serial ports detected. Verify that Python and pyserial are installed in the environment used by the extension.");
         }
         return ports;
     }
@@ -218,7 +218,7 @@ async function fileExists(p) {
     }
     catch (error) {
         // If there are serial connection errors, assume the file does not exist
-        // ya que no podemos verificar su estado
+        // since we cannot verify its state
         const errorStr = String(error?.message || error).toLowerCase();
         if (errorStr.includes("serialexception") ||
             errorStr.includes("device not configured") ||

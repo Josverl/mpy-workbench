@@ -38,7 +38,7 @@ class SyncTree {
         return item;
     }
     async getActionNodes() {
-        // Determina el estado actual de autosync para mostrarlo en el label
+        // Determine current autosync state to show in label
         let autoSyncLabel = "Toggle AutoSync";
         try {
             const ws = vscode.workspace.workspaceFolders?.[0];
