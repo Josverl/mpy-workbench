@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.monitor = void 0;
 const node_child_process_1 = require("node:child_process");
 const vscode = require("vscode");
+const pythonUtils_1 = require("./pythonUtils");
 class SerialMonitor {
     constructor() {
         this.busy = false;
@@ -49,9 +50,18 @@ class SerialMonitor {
             return;
         const connect = vscode.workspace.getConfiguration().get("mpyWorkbench.connect", "auto");
         const device = (connect || '').replace(/^serial:\/\//, "").replace(/^serial:\//, "");
+        // Get Python interpreter path dynamically
+        let pythonPath;
+        try {
+            pythonPath = await (0, pythonUtils_1.getPythonInterpreterPath)();
+        }
+        catch (error) {
+            console.warn('Failed to get Python interpreter path for monitoring, using fallback:', error);
+            pythonPath = 'python3'; // fallback to original behavior
+        }
         // Spawn a short-lived miniterm to read any pending output, then kill.
         const args = ["-m", "serial.tools.miniterm", device, "115200"];
-        const proc = (0, node_child_process_1.spawn)("python3", args, { stdio: ["ignore", "pipe", "pipe"] });
+        const proc = (0, node_child_process_1.spawn)(pythonPath, args, { stdio: ["ignore", "pipe", "pipe"] });
         let buf = "";
         let err = "";
         if (proc.stdout)

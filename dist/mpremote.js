@@ -33,6 +33,7 @@ async function mvOnDevice(src, dst) {
 const node_child_process_1 = require("node:child_process");
 const vscode = require("vscode");
 const path = require("node:path");
+const pythonUtils_1 = require("./pythonUtils");
 function normalizeConnect(c) {
     if (c.startsWith("serial://"))
         return c.replace(/^serial:\/\//, "");
@@ -93,19 +94,28 @@ function maybeNotifySerialStatus(msg) {
     }
 }
 function runTool(args, opts = {}) {
-    return new Promise((resolve, reject) => {
-        const execOnce = (attempt) => {
+    return new Promise(async (resolve, reject) => {
+        const execOnce = async (attempt) => {
             const cfg = vscode.workspace.getConfiguration();
             const baud = cfg.get("mpyWorkbench.baudRate", 115200) || 115200;
             const argsWithBaud = ["--baud", String(baud), ...args];
-            const child = (0, node_child_process_1.execFile)("python3", [toolPath(), ...argsWithBaud], { cwd: opts.cwd }, (err, stdout, stderr) => {
+            // Get Python interpreter path dynamically
+            let pythonPath;
+            try {
+                pythonPath = await (0, pythonUtils_1.getPythonInterpreterPath)();
+            }
+            catch (error) {
+                console.warn('Failed to get Python interpreter path, using fallback:', error);
+                pythonPath = 'python3'; // fallback to original behavior
+            }
+            const child = (0, node_child_process_1.execFile)(pythonPath, [toolPath(), ...argsWithBaud], { cwd: opts.cwd }, (err, stdout, stderr) => {
                 if (currentChild === child)
                     currentChild = null;
                 if (err) {
                     const emsg = String(stderr || err?.message || "");
                     // One-shot retry for transient disconnect/busy right after port handoff
                     if (attempt === 0 && isDisconnectMessage(emsg)) {
-                        setTimeout(() => execOnce(1), 300);
+                        setTimeout(async () => await execOnce(1), 300);
                         return;
                     }
                     maybeNotifySerialStatus(emsg);

@@ -10,6 +10,7 @@ export async function mvOnDevice(src: string, dst: string): Promise<void> {
 import { execFile, ChildProcess } from "node:child_process";
 import * as vscode from "vscode";
 import * as path from "node:path";
+import { getPythonInterpreterPath, getPythonFallbacks } from "./pythonUtils";
 
 function normalizeConnect(c: string): string {
   if (c.startsWith("serial://")) return c.replace(/^serial:\/\//, "");
@@ -81,18 +82,28 @@ function maybeNotifySerialStatus(msg: string): void {
 }
 
 function runTool(args: string[], opts: { cwd?: string } = {}): Promise<{ stdout: string; stderr: string }>{
-  return new Promise((resolve, reject) => {
-    const execOnce = (attempt: number) => {
+  return new Promise(async (resolve, reject) => {
+    const execOnce = async (attempt: number) => {
       const cfg = vscode.workspace.getConfiguration();
       const baud = cfg.get<number>("mpyWorkbench.baudRate", 115200) || 115200;
       const argsWithBaud = ["--baud", String(baud), ...args];
-      const child = execFile("python3", [toolPath(), ...argsWithBaud], { cwd: opts.cwd }, (err, stdout, stderr) => {
+      
+      // Get Python interpreter path dynamically
+      let pythonPath: string;
+      try {
+        pythonPath = await getPythonInterpreterPath();
+      } catch (error) {
+        console.warn('Failed to get Python interpreter path, using fallback:', error);
+        pythonPath = 'python3'; // fallback to original behavior
+      }
+      
+      const child = execFile(pythonPath, [toolPath(), ...argsWithBaud], { cwd: opts.cwd }, (err, stdout, stderr) => {
         if (currentChild === child) currentChild = null;
         if (err) {
           const emsg = String(stderr || err?.message || "");
           // One-shot retry for transient disconnect/busy right after port handoff
           if (attempt === 0 && isDisconnectMessage(emsg)) {
-            setTimeout(() => execOnce(1), 300);
+            setTimeout(async () => await execOnce(1), 300);
             return;
           }
           maybeNotifySerialStatus(emsg);

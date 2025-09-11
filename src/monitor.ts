@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import * as vscode from "vscode";
+import { getPythonInterpreterPath } from "./pythonUtils";
 
 class SerialMonitor {
   private timer?: NodeJS.Timeout;
@@ -44,9 +45,19 @@ class SerialMonitor {
     if (!this.running || this.busy) return;
     const connect = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.connect", "auto");
     const device = (connect || '').replace(/^serial:\/\//, "").replace(/^serial:\//, "");
+    
+    // Get Python interpreter path dynamically
+    let pythonPath: string;
+    try {
+      pythonPath = await getPythonInterpreterPath();
+    } catch (error) {
+      console.warn('Failed to get Python interpreter path for monitoring, using fallback:', error);
+      pythonPath = 'python3'; // fallback to original behavior
+    }
+    
     // Spawn a short-lived miniterm to read any pending output, then kill.
     const args = ["-m", "serial.tools.miniterm", device, "115200"];
-    const proc = spawn("python3", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const proc = spawn(pythonPath, args, { stdio: ["ignore", "pipe", "pipe"] });
     let buf = "";
     let err = "";
     if (proc.stdout) proc.stdout.on("data", d => { buf += String(d); });
