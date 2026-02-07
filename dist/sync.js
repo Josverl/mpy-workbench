@@ -5,6 +5,7 @@ exports.diffManifests = diffManifests;
 exports.saveManifest = saveManifest;
 exports.loadManifest = loadManifest;
 exports.cloneManifestWithNewId = cloneManifestWithNewId;
+exports.createEmptyManifest = createEmptyManifest;
 exports.defaultIgnorePatterns = defaultIgnorePatterns;
 exports.createIgnoreMatcher = createIgnoreMatcher;
 const fs = require("node:fs/promises");
@@ -65,6 +66,9 @@ async function loadManifest(filePath) {
 }
 function cloneManifestWithNewId(m, newId) {
     return { ...m, syncId: newId, generatedAt: Date.now() };
+}
+function createEmptyManifest(rootDir) {
+    return { version: 1, syncId: (0, node_crypto_1.randomUUID)(), root: rootDir, generatedAt: Date.now(), files: {} };
 }
 function defaultIgnorePatterns() {
     return [

@@ -155,21 +155,9 @@ export class BoardOperations {
       if (!ws) { vscode.window.showErrorMessage("No workspace folder open"); return; }
       const initialized = await isLocalSyncInitialized();
       if (!initialized) {
-        const initialize = await vscode.window.showWarningMessage(
-          "The local folder is not initialized for synchronization. Would you like to initialize it now?",
-          { modal: true },
-          "Initialize"
-        );
-        if (initialize !== "Initialize") return;
-        // Create initial manifest to initialize sync
-        await ensureWorkbenchIgnoreFile(ws.uri.fsPath);
-        const matcher = await createIgnoreMatcher(ws.uri.fsPath);
-        const initialManifest = await buildManifest(ws.uri.fsPath, matcher);
-        const manifestPath = path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR, MPY_MANIFEST_FILE);
-        await saveManifest(manifestPath, initialManifest);
-        vscode.window.showInformationMessage("Local folder initialized for synchronization.");
+        vscode.window.showWarningMessage("Workspace not initialized. Run **MPY Workbench: Initialize Workspace** first.");
+        return;
       }
-
       const rootPath = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.rootPath", "/");
       const matcher2 = await createIgnoreMatcher(ws.uri.fsPath);
       const man = await buildManifest(ws.uri.fsPath, matcher2);
@@ -607,22 +595,9 @@ export class BoardOperations {
       // Check if workspace is initialized for sync
       const initialized = await isLocalSyncInitialized();
       if (!initialized) {
-        const initialize = await vscode.window.showWarningMessage(
-          "The local folder is not initialized for synchronization. Would you like to initialize it now?",
-          { modal: true },
-          "Initialize"
-        );
-        if (initialize !== "Initialize") return;
-
-        // Create initial manifest to initialize sync
-        await ensureWorkbenchIgnoreFile(ws.uri.fsPath);
-        const matcher = await createIgnoreMatcher(ws.uri.fsPath);
-        const initialManifest = await buildManifest(ws.uri.fsPath, matcher);
-        const manifestPath = path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR, MPY_MANIFEST_FILE);
-        await saveManifest(manifestPath, initialManifest);
-        vscode.window.showInformationMessage("Local folder initialized for synchronization.");
+        vscode.window.showWarningMessage("Workspace not initialized. Run **MPY Workbench: Initialize Workspace** first.");
+        return;
       }
-
       progress.report({ message: "Reading local files..." });
 
       // Apply ignore/filters locally before comparing
@@ -771,20 +746,8 @@ export class BoardOperations {
     if (!ws) { vscode.window.showErrorMessage("No workspace folder open"); return; }
     const initialized = await isLocalSyncInitialized();
     if (!initialized) {
-      const initialize = await vscode.window.showWarningMessage(
-        "The local folder is not initialized for synchronization. Would you like to initialize it now?",
-        { modal: true },
-        "Initialize"
-      );
-      if (initialize !== "Initialize") return;
-
-      // Create initial manifest to initialize sync
-      await ensureWorkbenchIgnoreFile(ws.uri.fsPath);
-      const matcher = await createIgnoreMatcher(ws.uri.fsPath);
-      const initialManifest = await buildManifest(ws.uri.fsPath, matcher);
-      const manifestPath = path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR, MPY_MANIFEST_FILE);
-      await saveManifest(manifestPath, initialManifest);
-      vscode.window.showInformationMessage("Local folder initialized for synchronization.");
+      vscode.window.showWarningMessage("Workspace not initialized. Run **MPY Workbench: Initialize Workspace** first.");
+      return;
     }
     const rootPath = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.rootPath", "/");
     // Get current diffs and filter to files by comparing with current device stats
@@ -884,25 +847,11 @@ export class BoardOperations {
   async syncDiffsBoardToLocal(noClear: boolean = false): Promise<void> {
     const ws = vscode.workspace.workspaceFolders?.[0];
     if (!ws) { vscode.window.showErrorMessage("No workspace folder open"); return; }
-
     const initialized = await isLocalSyncInitialized();
     if (!initialized) {
-      const initialize = await vscode.window.showWarningMessage(
-        "The local folder is not initialized for synchronization. Would you like to initialize it now?",
-        { modal: true },
-        "Initialize"
-      );
-      if (initialize !== "Initialize") return;
-
-      // Create initial manifest to initialize sync
-      await ensureWorkbenchIgnoreFile(ws.uri.fsPath);
-      const matcher = await createIgnoreMatcher(ws.uri.fsPath);
-      const initialManifest = await buildManifest(ws.uri.fsPath, matcher);
-      const manifestPath = path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR, MPY_MANIFEST_FILE);
-      await saveManifest(manifestPath, initialManifest);
-      vscode.window.showInformationMessage("Local folder initialized for synchronization.");
+      vscode.window.showWarningMessage("Workspace not initialized. Run **MPY Workbench: Initialize Workspace** first.");
+      return;
     }
-
     const rootPath = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.rootPath", "/");
     // Get current diffs and filter to files by comparing with current device stats
     const deviceStats = await this.withAutoSuspend(() => mp.listTreeStats(rootPath));
