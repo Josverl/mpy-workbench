@@ -250,21 +250,20 @@ async function populateFileTreeCache(): Promise<void> {
     const parsedLines = parseTreeLines(String(stdout || ""));
     console.log(`[DEBUG] populateFileTreeCache: Parsed ${parsedLines.length} lines:`, parsedLines.map(l => `${l.fullPath} (depth: ${l.depth})`));
 
-    // Save parsed paths to file in .mpy-workbench
+    // Save parsed paths to file in .mpy-workbench only when workspace is initialized
     try {
       const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
       if (workspaceFolder) {
-        const workbenchDir = path.join(workspaceFolder.uri.fsPath, '.mpy-workbench');
-        const filePath = path.join(workbenchDir, 'tree-paths.json');
-
-        // Ensure .mpy-workbench directory exists
-        if (!fs.existsSync(workbenchDir)) {
-          fs.mkdirSync(workbenchDir, { recursive: true });
+        const manifestPath = path.join(workspaceFolder.uri.fsPath, '.mpy-workbench', 'esp32sync.json');
+        if (fs.existsSync(manifestPath)) {
+          const workbenchDir = path.join(workspaceFolder.uri.fsPath, '.mpy-workbench');
+          const filePath = path.join(workbenchDir, 'tree-paths.json');
+          if (!fs.existsSync(workbenchDir)) {
+            fs.mkdirSync(workbenchDir, { recursive: true });
+          }
+          fs.writeFileSync(filePath, JSON.stringify(parsedLines, null, 2));
+          console.log(`[DEBUG] Saved ${parsedLines.length} parsed paths to ${filePath}`);
         }
-
-        // Save the parsed paths as JSON
-        fs.writeFileSync(filePath, JSON.stringify(parsedLines, null, 2));
-        console.log(`[DEBUG] Saved ${parsedLines.length} parsed paths to ${filePath}`);
       }
     } catch (error) {
       console.error(`[DEBUG] Failed to save parsed paths:`, error);

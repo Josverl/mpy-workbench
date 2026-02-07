@@ -66,6 +66,10 @@ export function cloneManifestWithNewId(m: Manifest, newId: string): Manifest {
   return { ...m, syncId: newId, generatedAt: Date.now() };
 }
 
+export function createEmptyManifest(rootDir: string): Manifest {
+  return { version: 1, syncId: randomUUID(), root: rootDir, generatedAt: Date.now(), files: {} };
+}
+
 export function defaultIgnorePatterns(): string[] {
   return [
     ".git/",
