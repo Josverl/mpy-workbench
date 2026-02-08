@@ -58,10 +58,10 @@ export class SyncTree implements vscode.TreeDataProvider<SyncActionNode> {
       { id: "toggleAutoSync", label: autoSyncLabel, command: "mpyWorkbench.toggleWorkspaceAutoSync" },
       { id: "baseline", label: "Upload all files (Local → Board)", command: "mpyWorkbench.syncBaseline" },
       { id: "baselineFromBoard", label: "Download all files (Board → Local)", command: "mpyWorkbench.syncBaselineFromBoard" },
-      { id: "checkDiffs", label: "Check for differences (local vs board)", command: "mpyWorkbench.checkDiffs" },
+      { id: "checkDiffs", label: "Check for differences", command: "mpyWorkbench.checkDiffs" },
       { id: "syncDiffsLocalToBoard", label: "Sync changed Files Local → Board", command: "mpyWorkbench.syncDiffsLocalToBoard" },
       { id: "syncDiffsBoardToLocal", label: "Sync changed Files Board → Local", command: "mpyWorkbench.syncDiffsBoardToLocal" },
-      { id: "deleteAllBoard", label: "Delete ALL files on Board", command: "mpyWorkbench.deleteAllBoard" }
+      { id: "deleteAllBoard", label: "Clear Device Files", command: "mpyWorkbench.deleteAllBoard" }
     ];
   }
 }

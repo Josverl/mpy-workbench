@@ -17,8 +17,15 @@ exports.robustInterrupt = robustInterrupt;
 exports.robustInterruptAndReset = robustInterruptAndReset;
 const vscode = require("vscode");
 const node_child_process_1 = require("node:child_process");
+const path = require("node:path");
 const mp = require("./mpremote");
 const mpremote_1 = require("./mpremote");
+/** Converts a local relative path (e.g. "sub/test1.py") to a Python import name (e.g. "sub.test1"). */
+function localRelToImportName(rel) {
+    const normalized = rel.replace(/\\/g, "/");
+    const withoutPy = normalized.replace(/\.py$/i, "");
+    return withoutPy.replace(/\//g, ".");
+}
 // Disconnect the ESP32 REPL terminal but leave it open
 async function disconnectReplTerminal() {
     if (replTerminal) {
@@ -167,13 +174,44 @@ async function runActiveFile() {
         // Wait for the system to release the port
         await new Promise(r => setTimeout(r, 400));
     }
-    // Create a new terminal to run the file with mpremote
+    let cmd;
+    const ws = vscode.workspace.workspaceFolders?.[0];
+    if (!ws) {
+        cmd = `mpremote connect ${device} run "${filePath}"`;
+    }
+    else {
+        const rel = path.relative(ws.uri.fsPath, filePath).replace(/\\/g, "/");
+        if (rel.startsWith("..")) {
+            cmd = `mpremote connect ${device} run "${filePath}"`;
+        }
+        else {
+            const rootPath = vscode.workspace.getConfiguration().get("mpyWorkbench.rootPath", "/");
+            const devicePath = toDevicePath(rel, rootPath);
+            let onBoard = false;
+            try {
+                onBoard = await mp.fileExists(devicePath);
+            }
+            catch {
+                // Connection or serial error: fall back to run
+            }
+            if (onBoard) {
+                const moduleName = localRelToImportName(rel);
+                if (moduleName.includes("..")) {
+                    cmd = `mpremote connect ${device} run "${filePath}"`;
+                }
+                else {
+                    cmd = `mpremote connect ${device} exec "import ${moduleName}"`;
+                }
+            }
+            else {
+                cmd = `mpremote connect ${device} run "${filePath}"`;
+            }
+        }
+    }
     const runTerminal = vscode.window.createTerminal({
         name: "ESP32 Run File",
         cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
     });
-    // Use mpremote run command
-    const cmd = `mpremote connect ${device} run "${filePath}"`;
     runTerminal.sendText(cmd, true);
     runTerminal.show(true);
 }

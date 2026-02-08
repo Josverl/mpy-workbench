@@ -75,7 +75,7 @@
         },
         {
           "id": "mpyWorkbenchSyncView",
-          "name": "Sync Files",
+          "name": "Sync utilities",
           "icon": "$(sync)"
         }
       ]
@@ -148,7 +148,7 @@
       },
       {
         "command": "mpyWorkbench.runActiveFile",
-        "title": "MPY Workbench: Run Active File",
+        "title": "MPY Workbench: Run file",
         "icon": "$(play)"
       },
       {
@@ -249,7 +249,7 @@
       },
       {
         "command": "mpyWorkbench.runActiveFileFromView",
-        "title": "MPY Workbench: Run Active File (View)",
+        "title": "MPY Workbench: Run file (View)",
         "icon": "$(play)"
       },
       {
@@ -259,7 +259,7 @@
       },
       {
         "command": "mpyWorkbench.deleteAllBoard",
-        "title": "MPY Workbench: Delete ALL files on Board",
+        "title": "MPY Workbench: Clear Device Files",
         "icon": {
           "light": "./media/trash-red.svg",
           "dark": "./media/trash-red.svg"
@@ -267,7 +267,7 @@
       },
       {
         "command": "mpyWorkbench.deleteAllBoardFromView",
-        "title": "MPY Workbench: Delete ALL files on Board (View)",
+        "title": "MPY Workbench: Clear Device Files (View)",
         "icon": {
           "light": "./media/trash-red.svg",
           "dark": "./media/trash-red.svg"
