@@ -18,6 +18,7 @@ exports.robustInterruptAndReset = robustInterruptAndReset;
 const vscode = require("vscode");
 const node_child_process_1 = require("node:child_process");
 const mp = require("./mpremote");
+const mpremote_1 = require("./mpremote");
 // Disconnect the ESP32 REPL terminal but leave it open
 async function disconnectReplTerminal() {
     if (replTerminal) {
@@ -45,16 +46,50 @@ async function restartReplInExistingTerminal() {
     }
     catch { }
 }
+const MPREMOTE_MIN_VERSION = [1, 26, 0];
+function parseMpremoteVersion(output) {
+    const match = output.match(/(\d+)\.(\d+)\.(\d+)/);
+    if (!match)
+        return null;
+    return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+}
+function isVersionAtLeast(parsed, min) {
+    if (parsed[0] !== min[0])
+        return parsed[0] > min[0];
+    if (parsed[1] !== min[1])
+        return parsed[1] > min[1];
+    return parsed[2] >= min[2];
+}
+async function openReadmeForUpdate() {
+    const uris = await vscode.workspace.findFiles('README.md', null, 1);
+    if (uris.length > 0) {
+        const doc = await vscode.workspace.openTextDocument(uris[0]);
+        await vscode.window.showTextDocument(doc, { preview: false });
+    }
+    else {
+        await vscode.env.openExternal(vscode.Uri.parse('https://github.com/DanielBustillos/mpy-workbench#readme'));
+    }
+}
 async function checkMpremoteAvailability() {
     return new Promise((resolve, reject) => {
-        (0, node_child_process_1.exec)('mpremote --version', (err, stdout, stderr) => {
+        const opts = (0, mpremote_1.getMpremoteExecOptions)();
+        (0, node_child_process_1.exec)('mpremote --version', opts, (err, stdout, stderr) => {
             if (err) {
-                vscode.window.showWarningMessage('mpremote not found. Please install mpremote: pip install mpremote');
+                vscode.window.showWarningMessage('mpremote no encontrado. Instálalo con: pip install mpremote');
                 reject(err);
+                return;
             }
-            else {
-                resolve();
+            const output = String(stdout || '').trim() + String(stderr || '').trim();
+            const parsed = parseMpremoteVersion(output);
+            if (parsed && !isVersionAtLeast(parsed, MPREMOTE_MIN_VERSION)) {
+                const versionStr = parsed.join('.');
+                vscode.window.showWarningMessage(`mpremote ${versionStr} detectado. Esta extensión requiere mpremote >= 1.26 para Upload/Download/Check for differences.`, 'Cómo actualizar').then((choice) => {
+                    if (choice === 'Cómo actualizar') {
+                        openReadmeForUpdate();
+                    }
+                });
             }
+            resolve();
         });
     });
 }
@@ -99,8 +134,9 @@ async function softReset() {
     const connect = vscode.workspace.getConfiguration().get("mpyWorkbench.connect", "auto");
     const device = connect.replace(/^serial:\/\//, "").replace(/^serial:\//, "");
     const cmd = `mpremote connect ${device} reset`;
+    const opts = (0, mpremote_1.getMpremoteExecOptions)();
     await new Promise((resolve) => {
-        (0, node_child_process_1.exec)(cmd, (error, stdout, stderr) => {
+        (0, node_child_process_1.exec)(cmd, opts, (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`Board: Soft reset failed: ${stderr || error.message}`);
             }

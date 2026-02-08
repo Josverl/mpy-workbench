@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMpremoteExecOptions = getMpremoteExecOptions;
 exports.runMpremote = runMpremote;
 exports.ls = ls;
 exports.clearFileTreeCache = clearFileTreeCache;
@@ -139,6 +140,14 @@ class ConnectionManager {
 }
 // Global connection manager instance
 const connectionManager = new ConnectionManager();
+/** Single source of truth for mpremote subprocess options. Use UTF-8 so mpremote tree output (├──, └──, │) works on Windows (avoids UnicodeEncodeError: 'charmap'). */
+function getMpremoteExecOptions(overrides) {
+    return {
+        encoding: "utf8",
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+        ...overrides
+    };
+}
 function runMpremote(args, opts = {}) {
     return new Promise((resolve, reject) => {
         const maxRetries = opts.retryOnFailure !== false ? 2 : 0;
@@ -171,7 +180,8 @@ function runMpremote(args, opts = {}) {
                 return `"${arg}"`;
             });
             const cmd = `mpremote ${escapedArgs.join(' ')}`;
-            const child = (0, node_child_process_1.exec)(cmd, { cwd: opts.cwd }, (err, stdout, stderr) => {
+            const execOpts = getMpremoteExecOptions({ cwd: opts.cwd });
+            const child = (0, node_child_process_1.exec)(cmd, execOpts, (err, stdout, stderr) => {
                 if (currentChild === child)
                     currentChild = null;
                 if (err) {
