@@ -217,17 +217,23 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       const ws = vscode.workspace.workspaceFolders?.[0];
       if (!ws) {
-        autoSyncStatus.text = 'MPY: no ws';
-        autoSyncStatus.show();
+        autoSyncStatus.hide();
+        cancelTasksStatus.hide();
+        return;
+      }
+      if (!(await isLocalSyncInitialized())) {
+        autoSyncStatus.hide();
+        cancelTasksStatus.hide();
         return;
       }
       const enabled = await workspaceAutoSyncEnabled(ws.uri.fsPath);
       autoSyncStatus.text = enabled ? 'MPY: AutoSync ON' : 'MPY: AutoSync OFF';
       autoSyncStatus.color = enabled ? undefined : new vscode.ThemeColor('statusBarItem.warningForeground');
       autoSyncStatus.show();
+      cancelTasksStatus.show();
     } catch (e) {
-      autoSyncStatus.text = 'MPY: ?';
-      autoSyncStatus.show();
+      autoSyncStatus.hide();
+      cancelTasksStatus.hide();
     }
   }
 
@@ -240,11 +246,16 @@ export function activate(context: vscode.ExtensionContext) {
     watcher.onDidCreate(refreshAutoSyncStatus);
     watcher.onDidDelete(refreshAutoSyncStatus);
     context.subscriptions.push(watcher);
+    const manifestGlob = new vscode.RelativePattern(wsPath, `${MPY_WORKBENCH_DIR}/${MPY_MANIFEST_FILE}`);
+    const manifestWatcher = vscode.workspace.createFileSystemWatcher(manifestGlob);
+    manifestWatcher.onDidCreate(refreshAutoSyncStatus);
+    manifestWatcher.onDidChange(refreshAutoSyncStatus);
+    manifestWatcher.onDidDelete(refreshAutoSyncStatus);
+    context.subscriptions.push(manifestWatcher);
   }
 
   // Initialize status bar on activation
   refreshAutoSyncStatus();
-  cancelTasksStatus.show();
 
   let opQueue: Promise<any> = Promise.resolve();
   let listingInProgress = false;
@@ -318,6 +329,7 @@ export function activate(context: vscode.ExtensionContext) {
           if (choice !== "De-initialize") return;
           await fs.rm(path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR), { recursive: true, force: true });
           vscode.window.showInformationMessage("Workspace de-initialized.");
+          await refreshAutoSyncStatus();
           syncTree.refreshTree();
           return;
         }
@@ -327,6 +339,7 @@ export function activate(context: vscode.ExtensionContext) {
         const manifestPath = path.join(ws.uri.fsPath, MPY_WORKBENCH_DIR, MPY_MANIFEST_FILE);
         await saveManifest(manifestPath, emptyManifest);
         vscode.window.showInformationMessage("Workspace initialized for MPY Workbench.");
+        await refreshAutoSyncStatus();
         syncTree.refreshTree();
       } catch (e: any) {
         vscode.window.showErrorMessage(e?.message || "Failed to initialize workspace");
@@ -1405,6 +1418,7 @@ export function activate(context: vscode.ExtensionContext) {
       await writeWorkspaceConfig(ws.uri.fsPath, cfg);
       vscode.window.showInformationMessage(`Workspace auto-sync on save is now ${cfg.autoSyncOnSave ? 'ENABLED' : 'DISABLED'}`);
   try { await refreshAutoSyncStatus(); } catch {}
+      setTimeout(() => syncTree.refreshTree(), 0);
     } catch (e) {
       vscode.window.showErrorMessage('Failed to toggle workspace auto-sync: ' + String(e));
     }
