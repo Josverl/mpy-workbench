@@ -1,5 +1,12 @@
 # Cambios
 
+## [0.2.62] - 2026-02-08
+### Mejorado
+- **Usabilidad de errores al ejecutar (issue #14)**: Al usar "Run file", la extensión comprueba si el archivo existe en el board. Si existe, ejecuta con `mpremote exec "import <módulo>"` en lugar de `run`, de modo que los tracebacks muestran la ruta real del archivo (p. ej. `File "carpeta/archivo.py", line X`) y se puede hacer Ctrl+clic en VSCode para ir al código. Si el archivo no está en el board, se sigue usando `run` como antes.
+
+### Cambiado
+- **Etiquetas de la UI**: "Run Active File" → "Run file"; "Check for differences (local vs board)" → "Check for differences"; "Delete ALL files on Board" → "Clear Device Files"; menú "Sync Files" → "Sync utilities".
+
 ## [0.2.4] - 2025-09-13
 ### Cambiado
 - **Migración de pyserial a mpremote**: Reemplazado el uso directo de pyserial con mpremote para todas las operaciones de comunicación serial

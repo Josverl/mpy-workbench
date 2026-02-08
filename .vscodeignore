@@ -7,6 +7,9 @@ tsconfig.json
 .vscodeignore
 .vscodelocal/**
 node_modules/**
+.mpyignore
+.cursor
+.mpy-workbench
 
 # Mantén solo lo necesario
 !dist/**
