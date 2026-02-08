@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { exec } from "node:child_process";
 import * as mp from "./mpremote";
+import { getMpremoteExecOptions } from "./mpremote";
 
 // Disconnect the ESP32 REPL terminal but leave it open
 export async function disconnectReplTerminal() {
@@ -53,7 +54,8 @@ async function openReadmeForUpdate(): Promise<void> {
 
 export async function checkMpremoteAvailability(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    exec('mpremote --version', (err: any, stdout: string, stderr: string) => {
+    const opts = getMpremoteExecOptions();
+    exec('mpremote --version', opts, (err: any, stdout: string, stderr: string) => {
       if (err) {
         vscode.window.showWarningMessage('mpremote no encontrado. Instálalo con: pip install mpremote');
         reject(err);
@@ -118,8 +120,9 @@ export async function softReset(): Promise<void> {
   const connect = vscode.workspace.getConfiguration().get<string>("mpyWorkbench.connect", "auto");
   const device = connect.replace(/^serial:\/\//, "").replace(/^serial:\//, "");
   const cmd = `mpremote connect ${device} reset`;
+  const opts = getMpremoteExecOptions();
   await new Promise<void>((resolve) => {
-    exec(cmd, (error: any, stdout: any, stderr: any) => {
+    exec(cmd, opts, (error: any, stdout: any, stderr: any) => {
       if (error) {
         vscode.window.showErrorMessage(`Board: Soft reset failed: ${stderr || error.message}`);
       } else {

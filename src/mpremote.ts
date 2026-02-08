@@ -125,6 +125,15 @@ class ConnectionManager {
 // Global connection manager instance
 const connectionManager = new ConnectionManager();
 
+/** Single source of truth for mpremote subprocess options. Use UTF-8 so mpremote tree output (├──, └──, │) works on Windows (avoids UnicodeEncodeError: 'charmap'). */
+export function getMpremoteExecOptions(overrides?: { cwd?: string }): { encoding: "utf8"; env: NodeJS.ProcessEnv; cwd?: string } {
+  return {
+    encoding: "utf8",
+    env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    ...overrides
+  };
+}
+
 export function runMpremote(args: string[], opts: { cwd?: string; retryOnFailure?: boolean } = {}): Promise<{ stdout: string; stderr: string }>{
   return new Promise((resolve, reject) => {
     const maxRetries = opts.retryOnFailure !== false ? 2 : 0;
@@ -162,7 +171,8 @@ export function runMpremote(args: string[], opts: { cwd?: string; retryOnFailure
 
       const cmd = `mpremote ${escapedArgs.join(' ')}`;
 
-      const child = exec(cmd, { cwd: opts.cwd }, (err, stdout, stderr) => {
+      const execOpts = getMpremoteExecOptions({ cwd: opts.cwd });
+      const child = exec(cmd, execOpts, (err, stdout, stderr) => {
         if (currentChild === child) currentChild = null;
 
         if (err) {
