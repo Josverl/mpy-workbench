@@ -54,7 +54,7 @@ class ActionsTree {
     }
     async getActionNodes() {
         return [
-            { id: "runActive", label: "Run Active File", command: "mpyWorkbench.runActiveFile" },
+            { id: "runActive", label: "Run file", command: "mpyWorkbench.runActiveFile" },
             { id: "openRepl", label: "Open Repl", command: "mpyWorkbench.openRepl" },
             { id: "stop", label: "Stop", command: "mpyWorkbench.stop" },
             { id: "softReset", label: "Soft Reset", command: "mpyWorkbench.softReset" },
