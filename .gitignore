@@ -3,3 +3,4 @@
 .mpyignore
 .cursor
 .mpy-workbench
+.mpy-workbench-*
