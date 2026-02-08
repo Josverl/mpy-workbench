@@ -45,7 +45,7 @@ class SyncTree {
         const initialized = ws && fs.existsSync(ws.uri.fsPath + '/.mpy-workbench/esp32sync.json');
         const initLabel = initialized ? "De-initialize Workspace" : "Initialize Workspace";
         // Determina el estado actual de autosync para mostrarlo en el label
-        let autoSyncLabel = "Toggle AutoSync";
+        let autoSyncLabel = "Autosync: Off";
         try {
             if (ws) {
                 const cfg = fs.existsSync(ws.uri.fsPath + '/.mpy-workbench/config.json')
@@ -54,7 +54,7 @@ class SyncTree {
                 const enabled = typeof cfg.autoSyncOnSave === 'boolean'
                     ? cfg.autoSyncOnSave
                     : vscode.workspace.getConfiguration().get('mpyWorkbench.autoSyncOnSave', false);
-                autoSyncLabel = enabled ? 'AutoSync: ON (click to disable)' : 'AutoSync: OFF (click to enable)';
+                autoSyncLabel = enabled ? 'Autosync: On' : 'Autosync: Off';
             }
         }
         catch { }
