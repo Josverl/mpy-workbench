@@ -27,15 +27,52 @@ export async function restartReplInExistingTerminal() {
   } catch {}
 }
 
+const MPREMOTE_MIN_VERSION = [1, 26, 0] as const;
+
+function parseMpremoteVersion(output: string): [number, number, number] | null {
+  const match = output.match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return null;
+  return [parseInt(match[1], 10), parseInt(match[2], 10), parseInt(match[3], 10)];
+}
+
+function isVersionAtLeast(parsed: [number, number, number], min: readonly [number, number, number]): boolean {
+  if (parsed[0] !== min[0]) return parsed[0] > min[0];
+  if (parsed[1] !== min[1]) return parsed[1] > min[1];
+  return parsed[2] >= min[2];
+}
+
+async function openReadmeForUpdate(): Promise<void> {
+  const uris = await vscode.workspace.findFiles('README.md', null, 1);
+  if (uris.length > 0) {
+    const doc = await vscode.workspace.openTextDocument(uris[0]);
+    await vscode.window.showTextDocument(doc, { preview: false });
+  } else {
+    await vscode.env.openExternal(vscode.Uri.parse('https://github.com/DanielBustillos/mpy-workbench#readme'));
+  }
+}
+
 export async function checkMpremoteAvailability(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     exec('mpremote --version', (err: any, stdout: string, stderr: string) => {
       if (err) {
-        vscode.window.showWarningMessage('mpremote not found. Please install mpremote: pip install mpremote');
+        vscode.window.showWarningMessage('mpremote no encontrado. Instálalo con: pip install mpremote');
         reject(err);
-      } else {
-        resolve();
+        return;
       }
+      const output = String(stdout || '').trim() + String(stderr || '').trim();
+      const parsed = parseMpremoteVersion(output);
+      if (parsed && !isVersionAtLeast(parsed, MPREMOTE_MIN_VERSION)) {
+        const versionStr = parsed.join('.');
+        vscode.window.showWarningMessage(
+          `mpremote ${versionStr} detectado. Esta extensión requiere mpremote >= 1.26 para Upload/Download/Check for differences.`,
+          'Cómo actualizar'
+        ).then((choice) => {
+          if (choice === 'Cómo actualizar') {
+            openReadmeForUpdate();
+          }
+        });
+      }
+      resolve();
     });
   });
 }
