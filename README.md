@@ -53,7 +53,8 @@ Use the command `MPY Workbench: Toggle workspace Auto-Sync on Save` to enable or
 
 ## Python Requirements
 
-- **mpremote** — Used internally for all board operations (file management, REPL connection, command execution).
+- **mpremote** (>= 1.26) — Used internally for all board operations (file management, REPL connection, command execution). Older versions (e.g. 1.24.x) can cause the error `path, next_command` on Upload all files, Download all files, and Check for differences.
+- **Install or upgrade:** `pip install -U mpremote`
 
 The Python path used by the extension can be adjusted in the extension settings if a specific interpreter needs to be selected.
 
